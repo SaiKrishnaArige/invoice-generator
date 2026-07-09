@@ -1,4 +1,13 @@
-import type { ClientInfo, CompanySettings, ExtraCharge, InvoiceItem } from '@/types'
+import type {
+  ClientInfo,
+  CompanySettings,
+  ExtraCharge,
+  Invoice,
+  InvoiceItem,
+  MaterialComponent,
+  MaterialRates,
+  MaterialType,
+} from '@/types'
 import { generateId, todayISO, addDaysISO } from '@/lib/utils'
 
 // Retained exactly as provided in the source PDF ("The Home Editors" estimation sheet).
@@ -18,6 +27,31 @@ export const DEFAULT_TERMS_AND_CONDITIONS = `Terms and Conditions:
 Your acceptance of this proposal indicates that these Terms and Conditions have been read and accepted by you.`
 
 export const DEFAULT_COMPLIMENTARY_NOTE = 'Complimentary: Pest Control and Shoe Rack (3*4 sft)'
+
+export const DEFAULT_MATERIAL_RATES: MaterialRates = {
+  laminate: { box: 1400, frame: 1000 },
+  acrylic: { box: 2000, frame: 1400 },
+  pu: { box: 3200, frame: 2200 },
+}
+
+export const MATERIAL_LABELS: { value: MaterialType; label: string }[] = [
+  { value: 'laminate', label: 'Laminate' },
+  { value: 'acrylic', label: 'Acrylic' },
+  { value: 'pu', label: 'PU' },
+]
+
+export const COMPONENT_LABELS: { value: MaterialComponent; label: string }[] = [
+  { value: 'box', label: 'Box' },
+  { value: 'frame', label: 'Frame' },
+]
+
+export function materialLabel(material: MaterialType): string {
+  return MATERIAL_LABELS.find((m) => m.value === material)?.label ?? material
+}
+
+export function componentLabel(component: MaterialComponent): string {
+  return COMPONENT_LABELS.find((c) => c.value === component)?.label ?? component
+}
 
 export const DEFAULT_COMPANY_SETTINGS: CompanySettings = {
   name: 'THE HOME EDITORS',
@@ -39,6 +73,7 @@ export const DEFAULT_COMPANY_SETTINGS: CompanySettings = {
   stampDataUrl: '',
   signatureDataUrl: '',
   termsAndConditions: DEFAULT_TERMS_AND_CONDITIONS,
+  materialRates: DEFAULT_MATERIAL_RATES,
 }
 
 export const EXTRA_CHARGE_LABELS: { key: ExtraCharge['key']; label: string }[] = [
@@ -61,16 +96,64 @@ export function createDefaultExtraCharges(): ExtraCharge[] {
   }))
 }
 
-export function createEmptyItem(): InvoiceItem {
+export function createEmptyItem(startingPricePerSft = 0): InvoiceItem {
   return {
     id: generateId('item'),
     space: '',
     particulars: '',
+    material: 'laminate',
+    component: 'box',
+    materialsUsed: '',
     length: 0,
     breadth: 0,
     sft: 0,
-    pricePerSft: 0,
+    pricePerSft: startingPricePerSft,
     amount: 0,
+  }
+}
+
+function normalizeMaterialType(value: unknown): MaterialType {
+  return value === 'acrylic' || value === 'pu' ? value : 'laminate'
+}
+
+function normalizeMaterialComponent(value: unknown): MaterialComponent {
+  return value === 'frame' ? 'frame' : 'box'
+}
+
+/** Old saved items may predate the material/component/materialsUsed fields; default them. */
+export function normalizeInvoiceItem(item: InvoiceItem): InvoiceItem {
+  return {
+    ...item,
+    material: normalizeMaterialType(item.material),
+    component: normalizeMaterialComponent(item.component),
+    materialsUsed: typeof item.materialsUsed === 'string' ? item.materialsUsed : '',
+  }
+}
+
+export function normalizeInvoice(invoice: Invoice): Invoice {
+  if (!invoice || !Array.isArray(invoice.items)) return invoice
+  return { ...invoice, items: invoice.items.map(normalizeInvoiceItem) }
+}
+
+export function normalizeInvoiceList(invoices: Invoice[]): Invoice[] {
+  return Array.isArray(invoices) ? invoices.map(normalizeInvoice) : invoices
+}
+
+function normalizeMaterialRates(rates: Partial<MaterialRates> | undefined): MaterialRates {
+  return {
+    laminate: { ...DEFAULT_MATERIAL_RATES.laminate, ...rates?.laminate },
+    acrylic: { ...DEFAULT_MATERIAL_RATES.acrylic, ...rates?.acrylic },
+    pu: { ...DEFAULT_MATERIAL_RATES.pu, ...rates?.pu },
+  }
+}
+
+/** Old saved company settings may predate materialRates (and other fields); backfill defaults. */
+export function normalizeCompanySettings(company: CompanySettings): CompanySettings {
+  return {
+    ...DEFAULT_COMPANY_SETTINGS,
+    ...company,
+    bankDetails: { ...DEFAULT_COMPANY_SETTINGS.bankDetails, ...company?.bankDetails },
+    materialRates: normalizeMaterialRates(company?.materialRates),
   }
 }
 

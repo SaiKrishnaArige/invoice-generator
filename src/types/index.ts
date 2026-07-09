@@ -1,7 +1,18 @@
+export type MaterialType = 'laminate' | 'acrylic' | 'pu'
+export type MaterialComponent = 'box' | 'frame'
+export interface MaterialRate {
+  box: number
+  frame: number
+}
+export type MaterialRates = Record<MaterialType, MaterialRate>
+
 export interface InvoiceItem {
   id: string
   space: string
   particulars: string
+  material: MaterialType
+  component: MaterialComponent
+  materialsUsed: string
   length: number
   breadth: number
   sft: number
@@ -60,6 +71,7 @@ export interface CompanySettings {
   stampDataUrl: string
   signatureDataUrl: string
   termsAndConditions: string
+  materialRates: MaterialRates
 }
 
 export interface InvoiceTotals {

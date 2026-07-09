@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
-import type { BankDetails, CompanySettings } from '@/types'
+import { MATERIAL_LABELS } from '@/lib/defaults'
+import type { BankDetails, CompanySettings, MaterialRate, MaterialType } from '@/types'
 
 interface SettingsProps {
   open: boolean
@@ -73,6 +74,13 @@ export function Settings({ open, onClose }: SettingsProps) {
 
   const set = <K extends keyof CompanySettings>(key: K, value: CompanySettings[K]) => updateCompany({ [key]: value })
   const setBank = (patch: Partial<BankDetails>) => updateCompany({ bankDetails: { ...company.bankDetails, ...patch } })
+  const setMaterialRate = (material: MaterialType, patch: Partial<MaterialRate>) =>
+    updateCompany({
+      materialRates: {
+        ...company.materialRates,
+        [material]: { ...company.materialRates[material], ...patch },
+      },
+    })
 
   return (
     <Modal open={open} onClose={onClose} title="Company Settings">
@@ -139,6 +147,42 @@ export function Settings({ open, onClose }: SettingsProps) {
               <Label>Branch</Label>
               <Input value={company.bankDetails.branch} onChange={(e) => setBank({ branch: e.target.value })} />
             </div>
+          </div>
+        </section>
+
+        <section>
+          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-navy-500 dark:text-navy-300">
+            Material Pricing (₹ / SFT)
+          </p>
+          <p className="mb-3 text-xs text-navy-400 dark:text-navy-400">
+            These rates auto-fill a row&apos;s Price/SFT when you change its Material or Component — the price can
+            still be edited per row afterward.
+          </p>
+          <div className="flex flex-col gap-2">
+            <div className="grid grid-cols-3 gap-3 text-xs font-semibold uppercase tracking-wide text-navy-400 dark:text-navy-500">
+              <span>Material</span>
+              <span>Box</span>
+              <span>Frame</span>
+            </div>
+            {MATERIAL_LABELS.map(({ value, label }) => (
+              <div key={value} className="grid grid-cols-3 items-center gap-3">
+                <span className="text-sm font-medium text-navy-700 dark:text-navy-100">{label}</span>
+                <Input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={company.materialRates[value].box || ''}
+                  onChange={(e) => setMaterialRate(value, { box: parseFloat(e.target.value) || 0 })}
+                />
+                <Input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={company.materialRates[value].frame || ''}
+                  onChange={(e) => setMaterialRate(value, { frame: parseFloat(e.target.value) || 0 })}
+                />
+              </div>
+            ))}
           </div>
         </section>
 

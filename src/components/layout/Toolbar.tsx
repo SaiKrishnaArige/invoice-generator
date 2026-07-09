@@ -95,7 +95,7 @@ export function Toolbar({ onOpenSettings, onOpenHistory }: ToolbarProps) {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-1.5">
+        <div className="flex flex-nowrap items-center gap-1.5 overflow-x-auto [&>*]:shrink-0 sm:flex-wrap sm:overflow-visible">
           <Button size="sm" variant="outline" onClick={handleNew}>
             <FilePlus2 size={15} />
             <span className="hidden sm:inline">New</span>

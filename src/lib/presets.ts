@@ -1,0 +1,57 @@
+// Top-level rooms / areas only — used for the Space combobox.
+export const SPACE_PRESETS: string[] = [
+  'Hall',
+  'Drawing Room',
+  'Living Room',
+  'Master Bedroom',
+  'Bedroom 2',
+  'Bedroom 3',
+  'Kids Bedroom',
+  'Guest Bedroom',
+  'Pooja Room',
+  'Kitchen',
+]
+
+// Specific sub-areas/features first, then common P/F phrasing — used for the Particulars combobox.
+export const PARTICULARS_PRESETS: string[] = [
+  // Sub-areas / features (previously in Space)
+  'Kitchen - Below Platform',
+  'Kitchen - Upper Head',
+  'Kitchen - Lower Head',
+  'Dining Room',
+  'Study Room',
+  'Home Office',
+  'Balcony',
+  'Utility Area',
+  'Foyer / Entrance',
+  'TV Unit - Living Room',
+  'Wardrobe - Master Bedroom',
+  'Wardrobe - Bedroom',
+  'Crockery Unit',
+  'Dressing Unit',
+  'Shoe Rack',
+  'Bathroom Vanity',
+  'Puja Room Door',
+  'False Ceiling',
+
+  // Common particulars phrasing
+  'P/F boxes in position as per design, made out of 710 BWP plywood',
+  'P/F boxes in position as per design, made out of 710 BWP plywood, 1MM laminate finish',
+  'P/F boxes in position as per design, made out of 710 BWP plywood with acrylic finish',
+  'P/F boxes in position as per design, made out of 710 BWP plywood with PU finish',
+  'Wardrobe with sliding shutters, laminate finish',
+  'Wardrobe with hinged shutters, laminate finish',
+  'Loft above wardrobe, laminate finish',
+  'TV / entertainment unit with laminate finish',
+  'Crockery unit with acrylic finish, opposite wall',
+  'Kitchen base unit with acrylic finish',
+  'Kitchen wall unit with acrylic finish',
+  'Kitchen tall unit with acrylic finish',
+  'Study table with laminate finish',
+  'Dressing unit with mirror and laminate finish',
+  'False ceiling plain with Gyproc / St. Gobain channels',
+  'King size cot without mattress',
+  'Queen size cot without mattress',
+  'Pooja room door with panelling',
+  'Bedroom loft, laminate finish',
+]

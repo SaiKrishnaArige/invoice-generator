@@ -6,27 +6,32 @@ import type {
   Invoice,
   InvoiceItem,
   InvoiceTotals,
+  MaterialRates,
 } from '@/types'
 import { useLocalStorage } from '@/hooks/useLocalStorage'
 import { STORAGE_KEYS } from '@/lib/storage'
 import { calculateTotals, recalculateItem } from '@/lib/calculations'
 import {
   DEFAULT_COMPANY_SETTINGS,
+  DEFAULT_MATERIAL_RATES,
   createDefaultClientInfo,
   createDefaultExtraCharges,
   createEmptyItem,
   generateQuotationNumber,
+  normalizeCompanySettings,
+  normalizeInvoice,
+  normalizeInvoiceList,
 } from '@/lib/defaults'
 import { generateId } from '@/lib/utils'
 
-function createDraftInvoice(sequence: number): Invoice {
+function createDraftInvoice(sequence: number, materialRates: MaterialRates): Invoice {
   const now = new Date().toISOString()
   return {
     id: generateId('inv'),
     createdAt: now,
     updatedAt: now,
     client: createDefaultClientInfo(generateQuotationNumber(sequence)),
-    items: [createEmptyItem()],
+    items: [createEmptyItem(materialRates.laminate.box)],
     extraCharges: createDefaultExtraCharges(),
     discountPercent: 0,
     gstPercent: 0,
@@ -63,10 +68,18 @@ interface InvoiceContextValue {
 const InvoiceContext = createContext<InvoiceContextValue | null>(null)
 
 export function InvoiceProvider({ children }: { children: ReactNode }) {
-  const [invoices, setInvoices] = useLocalStorage<Invoice[]>(STORAGE_KEYS.invoices, [])
+  const [invoices, setInvoices] = useLocalStorage<Invoice[]>(STORAGE_KEYS.invoices, [], normalizeInvoiceList)
   const [sequence, setSequence] = useLocalStorage<number>(STORAGE_KEYS.sequence, 1)
-  const [company, setCompany] = useLocalStorage<CompanySettings>(STORAGE_KEYS.company, DEFAULT_COMPANY_SETTINGS)
-  const [current, setCurrent] = useLocalStorage<Invoice>(STORAGE_KEYS.draft, createDraftInvoice(1))
+  const [company, setCompany] = useLocalStorage<CompanySettings>(
+    STORAGE_KEYS.company,
+    DEFAULT_COMPANY_SETTINGS,
+    normalizeCompanySettings,
+  )
+  const [current, setCurrent] = useLocalStorage<Invoice>(
+    STORAGE_KEYS.draft,
+    createDraftInvoice(1, DEFAULT_MATERIAL_RATES),
+    normalizeInvoice,
+  )
   const [searchQuery, setSearchQuery] = useState('')
 
   const totals = useMemo(
@@ -90,16 +103,25 @@ export function InvoiceProvider({ children }: { children: ReactNode }) {
 
   const updateClient = (patch: Partial<ClientInfo>) => touch({ client: { ...current.client, ...patch } })
 
-  const addItem = () => touch({ items: [...current.items, createEmptyItem()] })
+  const addItem = () => touch({ items: [...current.items, createEmptyItem(company.materialRates.laminate.box)] })
 
   const updateItem = (id: string, patch: Partial<InvoiceItem>) =>
     touch({
-      items: current.items.map((item) => (item.id === id ? recalculateItem({ ...item, ...patch }) : item)),
+      items: current.items.map((item) => {
+        if (item.id !== id) return item
+        const merged = { ...item, ...patch }
+        // Material/Component changes auto-fill the price from the configured rate card;
+        // the field remains manually editable afterward until changed again.
+        if (patch.material !== undefined || patch.component !== undefined) {
+          merged.pricePerSft = company.materialRates[merged.material][merged.component]
+        }
+        return recalculateItem(merged)
+      }),
     })
 
   const removeItem = (id: string) => {
     const next = current.items.filter((item) => item.id !== id)
-    touch({ items: next.length > 0 ? next : [createEmptyItem()] })
+    touch({ items: next.length > 0 ? next : [createEmptyItem(company.materialRates.laminate.box)] })
   }
 
   const updateExtraCharge = (id: string, patch: Partial<ExtraCharge>) =>
@@ -120,7 +142,7 @@ export function InvoiceProvider({ children }: { children: ReactNode }) {
   const newInvoice = () => {
     const nextSeq = sequence + 1
     setSequence(nextSeq)
-    setCurrent(createDraftInvoice(nextSeq))
+    setCurrent(createDraftInvoice(nextSeq, company.materialRates))
   }
 
   const loadInvoice = (id: string) => {

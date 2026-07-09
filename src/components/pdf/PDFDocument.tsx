@@ -1,7 +1,7 @@
 import { Document, Page, View, Text, Image, StyleSheet, Font } from '@react-pdf/renderer'
 import type { CompanySettings, Invoice, InvoiceTotals } from '@/types'
 import { formatCurrency, formatDate, formatNumber } from '@/lib/utils'
-import { DEFAULT_COMPLIMENTARY_NOTE } from '@/lib/defaults'
+import { DEFAULT_COMPLIMENTARY_NOTE, componentLabel, materialLabel } from '@/lib/defaults'
 
 // Registering a widely-available system-agnostic font family so PDF text renders
 // consistently across browsers without relying on external font files.
@@ -235,7 +235,10 @@ export function PDFDocument({ invoice, company, totals, qrDataUrl }: PDFDocument
               <View key={item.id} style={[styles.tableRow, idx % 2 === 1 ? styles.tableRowAlt : {}]} wrap={false}>
                 <Text style={[styles.td, styles.colSN]}>{idx + 1}</Text>
                 <Text style={[styles.td, styles.colSpace]}>{item.space}</Text>
-                <Text style={[styles.td, styles.colParticulars]}>{item.particulars}</Text>
+                <Text style={[styles.td, styles.colParticulars]}>
+                  {`${item.particulars} — ${materialLabel(item.material)} (${componentLabel(item.component)})`}
+                  {item.materialsUsed ? `\nMaterials used: ${item.materialsUsed}` : ''}
+                </Text>
                 <Text style={[styles.td, styles.colLen]}>{formatNumber(item.length)}</Text>
                 <Text style={[styles.td, styles.colBr]}>{formatNumber(item.breadth)}</Text>
                 <Text style={[styles.td, styles.colSft]}>{formatNumber(item.sft)}</Text>
